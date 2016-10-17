@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #bigBox {
+            width: 400px;
+            height: 400px;
+            position: absolute;
+            top: 0;
+            /*left: 300px;*/
+            border: 1px solid #ccc;
+            overflow: hidden;
+            display: none;
+        }
+
+        #mask {
+            /*width: 100px;*/
+            /*height: 100px;*/
+            background: rgba(255, 255, 0, 0.4);
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: move;
+            display: none;
+        }
+
+        #smallBox {
+            /*width: 300px;*/
+            /*height: 300px;*/
+            border: 1px solid #000;
+            position: relative;
+        }
+
+        #smallBox img {
+            width: 100%;
+            height: 100%;
+            vertical-align: top;
+        }
+
+        #bigBox > img {
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+<div id="smallBox">
+    <img src="images/001.jpg" width="350" alt=""/>
+    <div id="mask"></div>
+</div>
+<div id="bigBox">
+    <img id="bigImg" src="images/0001.jpg" width="800" alt=""/>
+</div>
+<script>
+    (function(window){
+        // 核心函数
+        function Zoom(options){
+            return new Zoom.prototype.init(options)
+        };
+        Zoom.prototype={
+            constructor:Zoom,
+            init: function (options) {
+                options=options||{};
+                //初始化小盒子，大盒子的宽高度;
+                var smailWidth=options.smailWidth||300;
+                var bigWidth=options.bigWidth||400;
+
+                var smallBox = document.getElementById("smallBox");
+                var bigBox = document.getElementById("bigBox");
+                var mask = document.getElementById("mask");
+                var bigImg = document.getElementById("bigImg");
+
+                //样式设置
+                smallBox.style.width=smailWidth+'px';
+                smallBox.style.height=smailWidth+'px';
+                bigBox.style.width=bigWidth+'px';
+                bigBox.style.height=bigWidth+'px';
+                bigBox.style.left=smailWidth+'px';
+                mask.style.width=smailWidth/2+'px';
+                mask.style.height=smailWidth/2+'px';
+
+                smallBox.onmouseover = function () {
+                    Zoom.show(mask,bigBox);
+                }
+                smallBox.onmouseout = function () {
+                    Zoom.hide(mask,bigBox);
+                }
+                smallBox.onmousemove = function (event) {
+                    Zoom.move(event,smallBox,mask,bigImg);
+                }
+            }
+        }
+
+        // 扩展继承方法
+        Zoom.extend=Zoom.prototype.extend= function (source) {
+            if(source&&typeof source==='object'){
+                for(var key in source){
+                    this[key]=source[key];
+                }
+            }
+        }
+
+        //扩展放大镜的显示,隐藏，移动方法;
+        Zoom.extend({
+            show: function (mask,bigBox) {
+                mask.style.display = "block";
+                bigBox.style.display = "block";
+            },
+            hide: function (mask,bigBox) {
+                mask.style.display = "none";
+                bigBox.style.display = "none";
+            },
+            move: function (event,smallBox,mask,bigImg) {
+                var event = event || window.event;
+                //页面中的位置
+                var pageX = event.pageX || event.clientX + document.documentElement.scrollLeft;
+                var pageY = event.pageY || event.clientY + document.documentElement.scrollTop;
+                //在盒子中的位置
+                var boxX = pageX - smallBox.offsetLeft;
+                var boxY = pageY - smallBox.offsetTop;
+                //设置遮罩位置
+                var maskX = boxX - mask.offsetWidth / 2;
+                var maskY = boxY - mask.offsetHeight / 2;
+
+                //限制遮罩位置
+                if (maskX < 0) {
+                    maskX = 0;
+                }
+                if (maskX > smallBox.offsetWidth - mask.offsetWidth) {
+                    maskX = smallBox.offsetWidth - mask.offsetWidth;
+                }
+                if (maskY < 0) {
+                    maskY = 0;
+                }
+                if (maskY > smallBox.offsetHeight - mask.offsetHeight) {
+                    maskY = smallBox.offsetHeight - mask.offsetHeight;
+                }
+                //设置遮罩位置
+                mask.style.left = maskX + "px";
+                mask.style.top = maskY + "px";
+
+                //根据比例移动大图片
+                //和遮罩成比例 而且是反方向
+                bigImg.style.left = -bigImg.offsetWidth/smallBox.offsetWidth*maskX+ "px";
+                bigImg.style.top = -bigImg.offsetHeight/smallBox.offsetHeight*maskY + "px";
+
+            }
+        });
+        Zoom.prototype.init.prototype=Zoom.prototype;
+
+        //暴露出去
+        window.Zoom=Zoom;
+    })(window);
+
+    //调用
+    Zoom({smailWidth:300,bigWidth:400});
+</script>
+</body>
+</html>
